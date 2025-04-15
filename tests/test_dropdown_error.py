@@ -8,22 +8,19 @@ import os
 import sys
 
 from browser_use.browser.browser import Browser, BrowserConfig
-from browser_use.browser.context import BrowserContext, BrowserContextConfig
+from browser_use.browser.context import BrowserContext
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import asyncio
 
 from langchain_openai import ChatOpenAI
 
-from browser_use import Agent, AgentHistoryList, Controller
+from browser_use import Agent, AgentHistoryList
 
 llm = ChatOpenAI(model='gpt-4o')
 # browser = Browser(config=BrowserConfig(headless=False))
 
 agent = Agent(
-	task=(
-		'go to https://codepen.io/shyam-king/pen/emOyjKm and select number "4" and return the output of "selected value"'
-	),
+	task=('go to https://codepen.io/shyam-king/pen/emOyjKm and select number "4" and return the output of "selected value"'),
 	llm=llm,
 	browser_context=BrowserContext(
 		browser=Browser(config=BrowserConfig(headless=False, disable_security=True)),

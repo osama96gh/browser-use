@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional
 
+# Third-party imports
 import gradio as gr
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -10,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+# Local module imports
 from browser_use import Agent
 
 load_dotenv()
@@ -83,9 +85,7 @@ def create_ui():
 					placeholder='E.g., Find flights from New York to London for next week',
 					lines=3,
 				)
-				model = gr.Dropdown(
-					choices=['gpt-4', 'gpt-3.5-turbo'], label='Model', value='gpt-4'
-				)
+				model = gr.Dropdown(choices=['gpt-4', 'gpt-3.5-turbo'], label='Model', value='gpt-4')
 				headless = gr.Checkbox(label='Run Headless', value=True)
 				submit_btn = gr.Button('Run Task')
 

@@ -1,4 +1,6 @@
 """
+Goal: Provides a template for automated posting on X (Twitter), including new tweets, tagging, and replies.
+
 X Posting Template using browser-use
 ----------------------------------------
 
@@ -17,67 +19,70 @@ reply_url="XXXXX"
 Any issues, contact me on X @defichemist95
 """
 
+import asyncio
 import os
 import sys
-from typing import Optional
-from dataclasses import dataclass
-from dotenv import load_dotenv
-
-load_dotenv()
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import asyncio
+from dataclasses import dataclass
+
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from browser_use.browser.browser import Browser, BrowserConfig
+
 from browser_use import Agent, Controller
+from browser_use.browser.browser import Browser, BrowserConfig
+
+# Load environment variables
+load_dotenv()
+if not os.getenv('OPENAI_API_KEY'):
+	raise ValueError('OPENAI_API_KEY is not set. Please add it to your environment variables.')
 
 
 # ============ Configuration Section ============
 @dataclass
 class TwitterConfig:
-    """Configuration for Twitter posting"""
+	"""Configuration for Twitter posting"""
 
-    openai_api_key: str
-    chrome_path: str
-    target_user: str  # Twitter handle without @
-    message: str
-    reply_url: str
-    headless: bool = False
-    model: str = "gpt-4o-mini"
-    base_url: str = "https://x.com/home"
+	openai_api_key: str
+	chrome_path: str
+	target_user: str  # Twitter handle without @
+	message: str
+	reply_url: str
+	headless: bool = False
+	model: str = 'gpt-4o-mini'
+	base_url: str = 'https://x.com/home'
 
 
 # Customize these settings
 config = TwitterConfig(
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-    chrome_path="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # This is for MacOS (Chrome)
-    target_user="XXXXX",
-    message="XXXXX",
-    reply_url="XXXXX",
-    headless=False,
+	openai_api_key=os.getenv('OPENAI_API_KEY'),
+	chrome_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',  # This is for MacOS (Chrome)
+	target_user='XXXXX',
+	message='XXXXX',
+	reply_url='XXXXX',
+	headless=False,
 )
 
 
 def create_twitter_agent(config: TwitterConfig) -> Agent:
+	llm = ChatOpenAI(model=config.model, api_key=config.openai_api_key)
 
-    llm = ChatOpenAI(model=config.model, api_key=config.openai_api_key)
+	browser = Browser(
+		config=BrowserConfig(
+			headless=config.headless,
+			browser_binary_path=config.chrome_path,
+		)
+	)
 
-    browser = Browser(
-        config=BrowserConfig(
-            headless=config.headless,
-            chrome_instance_path=config.chrome_path,
-        )
-    )
+	controller = Controller()
 
-    controller = Controller()
+	# Construct the full message with tag
+	full_message = f'@{config.target_user} {config.message}'
 
-    # Construct the full message with tag
-    full_message = f"@{config.target_user} {config.message}"
-
-    # Create the agent with detailed instructions
-    return Agent(
-        task=f"""Navigate to Twitter and create a post and reply to a tweet.
+	# Create the agent with detailed instructions
+	return Agent(
+		task=f"""Navigate to Twitter and create a post and reply to a tweet.
 
         Here are the specific steps:
 
@@ -98,25 +103,25 @@ def create_twitter_agent(config: TwitterConfig) -> Agent:
         - Verify the post button is clickable before clicking
         - Do not click on the '+' button which will add another tweet
         """,
-        llm=llm,
-        controller=controller,
-        browser=browser,
-    )
+		llm=llm,
+		controller=controller,
+		browser=browser,
+	)
 
 
 async def post_tweet(agent: Agent):
+	try:
+		await agent.run(max_steps=100)
+		agent.create_history_gif()
+		print('Tweet posted successfully!')
+	except Exception as e:
+		print(f'Error posting tweet: {str(e)}')
 
-    try:
-        await agent.run(max_steps=100)
-        agent.create_history_gif()
-        print("Tweet posted successfully!")
-    except Exception as e:
-        print(f"Error posting tweet: {str(e)}")
+
+async def main():
+	agent = create_twitter_agent(config)
+	await agent.run()
 
 
-def main():
-    agent = create_twitter_agent(config)
-    asyncio.run(post_tweet(agent))
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+	asyncio.run(main())
